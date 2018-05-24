@@ -33,7 +33,7 @@ namespace Microsoft.AspNetCore.Mvc.DataAnnotations
         }
 
         /// <summary>
-        /// Gets or sets a value that determines if <see cref="MvcDataAnnotationsLocalizationOptions.DataAnnotationLocalizerProvider"/> should be used whtne localizing <see cref="Enum"/> types.
+        /// Gets or sets a value that determines if <see cref="MvcDataAnnotationsLocalizationOptions.DataAnnotationLocalizerProvider"/> should be used while localizing <see cref="Enum"/> types.
         /// If set to <c>true</c> DataAnnotationLocalizerProvider will be used in localizing <see cref="Enum"/> types.
         /// If set to <c>false</c> the localization will search for values in resource files for the <see cref="Enum"/>.
         /// </summary>

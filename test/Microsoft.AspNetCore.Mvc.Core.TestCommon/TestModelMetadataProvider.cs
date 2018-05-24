@@ -16,10 +16,10 @@ namespace Microsoft.AspNetCore.Mvc.ModelBinding
 {
     public class TestModelMetadataProvider : DefaultModelMetadataProvider
     {
-        public static DataAnnotationsMetadataProvider CreateDefaultDataAnnotationsProvider(IStringLocalizerFactory stringLocalizerFactory)
+        private static DataAnnotationsMetadataProvider CreateDefaultDataAnnotationsProvider(IStringLocalizerFactory stringLocalizerFactory)
         {
             var options = Options.Create(new MvcDataAnnotationsLocalizationOptions());
-            options.Value.DataAnnotationLocalizerProvider = (modelType, slf) => slf.Create(modelType);
+            options.Value.DataAnnotationLocalizerProvider = (modelType, localizerFactory) => localizerFactory.Create(modelType);
 
             return new DataAnnotationsMetadataProvider(options, stringLocalizerFactory);
         }

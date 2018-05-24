@@ -3,18 +3,18 @@
 
 using System.ComponentModel.DataAnnotations;
 
-namespace DataAnnotationsWebSite.Models
+namespace RazorWebSite.Models
 {
-    public class Model
-    {
-        [Display(Name = "ModelEnum")]
-        public ModelEnum Id { get; set; }
-    }
-
     public enum ModelEnum
     {
         [Display(Name = "FirstOptionDisplay")]
         FirstOption,
         SecondOptions
+    }
+
+    public class EnumModel
+    {
+        [Display(Name = "ModelEnum")]
+        public ModelEnum Id { get; set; }
     }
 }

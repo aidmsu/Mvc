@@ -4,27 +4,13 @@
 using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DataAnnotationsWebSite
+namespace RazorWebSite
 {
-    public class SingleType
+    public class StartupDataAnnotations
     {
-
-    }
-
-    public class OverriddenStartup
-    {
-        public OverriddenStartup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
-        public IConfiguration Configuration { get; }
-
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -40,7 +26,7 @@ namespace DataAnnotationsWebSite
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
             app.UseDeveloperExceptionPage();
             app.UseRequestLocalization(new RequestLocalizationOptions
@@ -55,10 +41,8 @@ namespace DataAnnotationsWebSite
             });
             app.UseStaticFiles();
 
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute("ActionAsMethod", "{controller}/{action}");
-            });
+            // Add MVC to the request pipeline
+            app.UseMvcWithDefaultRoute();
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Microsoft.AspNetCore.Mvc.DataAnnotations
             {
                 var values = new Dictionary<string, object>();
 
-                if (Version > CompatibilityVersion.Version_2_2)
+                if (Version >= CompatibilityVersion.Version_2_2)
                 {
                     values[nameof(MvcDataAnnotationsLocalizationOptions.AllowDataAnnotationsLocalizationForEnumDisplayAttributes)] = true;
                 }

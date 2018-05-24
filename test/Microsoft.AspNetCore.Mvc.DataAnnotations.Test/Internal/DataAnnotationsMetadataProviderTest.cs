@@ -17,6 +17,12 @@ using Xunit;
 
 namespace Microsoft.AspNetCore.Mvc.DataAnnotations.Internal
 {
+    public enum TestEnum
+    {
+        [Display(Name ="DisplayNameValue")]
+        DisplayNameValue
+    }
+
     public class DataAnnotationsMetadataProviderTest
     {
         // Includes attributes with a 'simple' effect on display details.
@@ -267,6 +273,102 @@ namespace Microsoft.AspNetCore.Mvc.DataAnnotations.Internal
 
             // Assert
             Assert.Equal("DisplayNameAttributeValue", context.DisplayMetadata.DisplayName());
+        }
+
+        [Fact]
+        public void CreateDisplayMetadata_DisplayNameAttribute_OnEnum_CompatSwitchWorks()
+        {
+            // Arrange
+            var unsharedLocalizer = new Mock<IStringLocalizer>(MockBehavior.Strict);
+            unsharedLocalizer
+                .Setup(s => s["DisplayNameValue"])
+                .Returns(new LocalizedString("DisplaynameValue", "didn't use shared"));
+
+            var sharedLocalizer = new Mock<IStringLocalizer>(MockBehavior.Strict);
+            sharedLocalizer
+                .Setup(s => s["DisplayNameValue"])
+                .Returns(
+                () =>
+                {
+                    return new LocalizedString("DisplayNameValue", "used shared");
+                });
+
+            var stringLocalizerFactoryMock = new Mock<IStringLocalizerFactory>(MockBehavior.Strict);
+            stringLocalizerFactoryMock
+                .Setup(s => s.Create(typeof(TestEnum)))
+                .Returns(() => {
+                    return unsharedLocalizer.Object;
+                });
+            stringLocalizerFactoryMock
+                .Setup(s => s.Create(typeof(EmptyClass)))
+                .Returns(() =>
+                {
+                    return sharedLocalizer.Object;
+                });
+
+            var localizationOptions = Options.Create(new MvcDataAnnotationsLocalizationOptions());
+            localizationOptions.Value.AllowDataAnnotationsLocalizationForEnumDisplayAttributes = false;
+            localizationOptions.Value.DataAnnotationLocalizerProvider = (type, stringLocalizerFactory) =>
+            {
+                return stringLocalizerFactory.Create(typeof(EmptyClass));
+            };
+
+            var provider = new DataAnnotationsMetadataProvider(
+                localizationOptions,
+                stringLocalizerFactory: stringLocalizerFactoryMock.Object);
+
+            var displayName = new DisplayNameAttribute("DisplayNameValue");
+
+            var attributes = new Attribute[] { displayName };
+            var key = ModelMetadataIdentity.ForType(typeof(TestEnum));
+            var context = new DisplayMetadataProviderContext(key, GetModelAttributes(attributes));
+
+            // Act
+            provider.CreateDisplayMetadata(context);
+
+            // Assert
+            Assert.Collection(context.DisplayMetadata.EnumGroupedDisplayNamesAndValues, (e) => {
+                Assert.Equal("didn't use shared", e.Key.Name);
+            });
+        }
+
+        [Fact]
+        public void CreateDisplayMetadata_DisplayNameAttribute_OnEnum_CompatShimOn()
+        {           // Arrange
+            var sharedLocalizer = new Mock<IStringLocalizer>(MockBehavior.Strict);
+            sharedLocalizer
+                .Setup(s => s["DisplayNameValue"])
+                .Returns(new LocalizedString("DisplayNameValue", "Name from DisplayNameAttribute"));
+
+            var stringLocalizerFactoryMock = new Mock<IStringLocalizerFactory>(MockBehavior.Strict);
+            stringLocalizerFactoryMock
+                .Setup(s => s.Create(typeof(EmptyClass)))
+                .Returns(() => sharedLocalizer.Object);
+
+            var localizationOptions = Options.Create(new MvcDataAnnotationsLocalizationOptions());
+            localizationOptions.Value.AllowDataAnnotationsLocalizationForEnumDisplayAttributes = true;
+            localizationOptions.Value.DataAnnotationLocalizerProvider = (type, stringLocalizerFactory) =>
+            {
+                return stringLocalizerFactory.Create(typeof(EmptyClass));
+            };
+
+            var provider = new DataAnnotationsMetadataProvider(
+                localizationOptions,
+                stringLocalizerFactory: stringLocalizerFactoryMock.Object);
+
+            var displayName = new DisplayNameAttribute("DisplayNameValue");
+
+            var attributes = new Attribute[] { displayName };
+            var key = ModelMetadataIdentity.ForType(typeof(TestEnum));
+            var context = new DisplayMetadataProviderContext(key, GetModelAttributes(attributes));
+
+            // Act
+            provider.CreateDisplayMetadata(context);
+
+            // Assert
+            Assert.Collection(context.DisplayMetadata.EnumGroupedDisplayNamesAndValues, (e) => {
+                Assert.Equal("Name from DisplayNameAttribute", e.Key.Name);
+            });
         }
 
         [Fact]
@@ -567,8 +669,13 @@ namespace Microsoft.AspNetCore.Mvc.DataAnnotations.Internal
             stringLocalizerFactoryMock
                 .Setup(f => f.Create(It.IsAny<Type>()))
                 .Returns(stringLocalizer.Object);
+            var options = Options.Create(new MvcDataAnnotationsLocalizationOptions());
+            options.Value.DataAnnotationLocalizerProvider = (type, stringLocalizerFactory) =>
+            {
+                return stringLocalizerFactory.Create(type);
+            };
 
-            var provider = TestModelMetadataProvider.CreateDefaultDataAnnotationsProvider(stringLocalizerFactoryMock.Object);
+            var provider = new DataAnnotationsMetadataProvider(options, stringLocalizerFactoryMock.Object);
 
             var display = new DisplayAttribute()
             {
@@ -831,12 +938,14 @@ namespace Microsoft.AspNetCore.Mvc.DataAnnotations.Internal
                 .Setup(s => s[It.IsAny<string>()])
                 .Returns<string>((index) => new LocalizedString(index, index + " value"));
 
-            var stringLocalizerFactory = new Mock<IStringLocalizerFactory>(MockBehavior.Strict);
-            stringLocalizerFactory
+            var stringLocalizerFactoryMock = new Mock<IStringLocalizerFactory>(MockBehavior.Strict);
+            stringLocalizerFactoryMock
                 .Setup(f => f.Create(It.IsAny<Type>()))
                 .Returns(stringLocalizer.Object);
 
-            var provider = TestModelMetadataProvider.CreateDefaultDataAnnotationsProvider(stringLocalizerFactory.Object);
+            var options = Options.Create(new MvcDataAnnotationsLocalizationOptions());
+            options.Value.DataAnnotationLocalizerProvider = (modelType, stringLocalizerFactory) => stringLocalizerFactory.Create(modelType);
+            var provider = new DataAnnotationsMetadataProvider(options, stringLocalizerFactoryMock.Object);
 
             // Act
             provider.CreateDisplayMetadata(context);
@@ -1259,7 +1368,7 @@ namespace Microsoft.AspNetCore.Mvc.DataAnnotations.Internal
                 .Returns(stringLocalizer.Object);
 
             var options = Options.Create(new MvcDataAnnotationsLocalizationOptions());
-            options.Value.DataAnnotationLocalizerProvider = (modelType, slf) => slf.Create(modelType);
+            options.Value.DataAnnotationLocalizerProvider = (modelType, localizerFactory) => localizerFactory.Create(modelType);
 
             return new DataAnnotationsMetadataProvider(
                 options,
