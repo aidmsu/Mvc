@@ -239,18 +239,13 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
             {
                 options.HtmlHelperOptions.IdAttributeDotReplacement = idAttributeDotReplacement;
             }
-            var localizationOptionsAccesor = new Mock<IOptions<MvcDataAnnotationsLocalizationOptions>>();
 
-            var locOptions = new MvcDataAnnotationsLocalizationOptions();
-            locOptions.DataAnnotationLocalizerProvider = (type, stringLocalizerFactory) =>
-            {
-                return stringLocalizerFactory.Create(type);
-            };
-            localizationOptionsAccesor.SetupGet(o => o.Value).Returns(locOptions);
+            var localizationOptions = new MvcDataAnnotationsLocalizationOptions();
+            var localizationOptionsAccesor = Options.Create(localizationOptions);
 
             options.ClientModelValidatorProviders.Add(new DataAnnotationsClientModelValidatorProvider(
                 new ValidationAttributeAdapterProvider(),
-                localizationOptionsAccesor.Object,
+                localizationOptionsAccesor,
                 localizerFactory));
 
             var urlHelperFactory = new Mock<IUrlHelperFactory>();
